@@ -12,7 +12,7 @@ FONTES_DEMO = ["ansi_shadow", "slant", "big", "banner3-D", "doom", "epic", "isom
 
 
 def mostrar_banner(font="ansi_shadow"):
-    linha1 = pyfiglet.figlet_format("Global Solution 2026.1", font=font)
+    linha1 = pyfiglet.figlet_format("Global Solution", font=font)
     linha2 = pyfiglet.figlet_format("Mission Control AI", font=font)
     console.print(Align.center(Text(linha1, style="bold #A855F7")))
     console.print(Align.center(Text(linha2, style="bold #06B6D4")))
