@@ -4,6 +4,7 @@ import os
 from ollama import Client
 from dotenv import load_dotenv
 from pathlib import Path
+from src import telemetria, alertas
 
 load_dotenv()
 
@@ -41,28 +42,83 @@ def load_system_prompt():
 
 
 class MissionEngine:
-    """Motor de análise — métodos serão completados nas próximas etapas."""
+    """Motor de análise da Mission Control AI — MobilitySat."""
 
     def __init__(self):
         self.trilha = TRILHA
         self.system_prompt = load_system_prompt()
+        self.historico = []  # memória dos últimos ciclos
+        self.modo_telemetria = "aleatorio"  # modo padrão
 
     def is_ready(self):
-        # Trocamos para True quando analyze() estiver implementado
-        return False
+        return True
 
     def status_snapshot(self):
-        """Retorna texto resumindo o estado atual da telemetria."""
-        return "🛠 status_snapshot() ainda não implementado."
+        """Coleta telemetria, avalia alertas e retorna snapshot formatado."""
+        dados = telemetria.coletar(modo=self.modo_telemetria)
+        resultado = alertas.avaliar(dados)
+
+        telemetria_txt = telemetria.formatar(dados)
+        alertas_txt = alertas.formatar_alertas(resultado)
+
+        return f"{telemetria_txt}\n\n{alertas_txt}"
 
     def analyze(self, pergunta_usuario):
-        """Analisa a pergunta com base na telemetria + alertas + IA."""
-        return (
-            "🛠 Implementação pendente.\n\n"
-            "Olá! A interface CLI está funcionando, mas a lógica\n"
-            "de análise ainda não foi conectada. O grupo precisa:\n\n"
-            " 1. Completar src/telemetria.py\n"
-            " 2. Completar src/alertas.py\n"
-            " 3. Escrever o system prompt em prompts/system_prompt.md\n"
-            " 4. Sobrescrever analyze() em src/engine.py"
-        )
+        """
+        Analisa a pergunta com base na telemetria + alertas + IA.
+        1. Coleta dados via telemetria.coletar()
+        2. Avalia alertas via alertas.avaliar()
+        3. Monta prompt com dados + alertas + histórico + pergunta
+        4. Chama llm() com o system prompt
+        5. Armazena no histórico e retorna resposta
+        """
+
+        # Detecta se usuário quer mudar o modo de telemetria
+        pergunta_lower = pergunta_usuario.lower()
+        if "modo normal" in pergunta_lower:
+            self.modo_telemetria = "normal"
+        elif "modo atenção" in pergunta_lower or "modo atencao" in pergunta_lower:
+            self.modo_telemetria = "atencao"
+        elif "modo crítico" in pergunta_lower or "modo critico" in pergunta_lower:
+            self.modo_telemetria = "critico"
+        elif "modo aleatório" in pergunta_lower or "modo aleatorio" in pergunta_lower:
+            self.modo_telemetria = "aleatorio"
+
+        # 1. Coletar telemetria
+        dados = telemetria.coletar(modo=self.modo_telemetria)
+
+        # 2. Avaliar alertas
+        resultado = alertas.avaliar(dados)
+
+        # 3. Formatar dados e alertas
+        telemetria_txt = telemetria.formatar(dados)
+        alertas_txt = alertas.formatar_alertas(resultado)
+
+        # 4. Montar histórico dos últimos 3 ciclos
+        historico_txt = ""
+        if self.historico:
+            historico_txt = "\n\nHistórico recente (últimos ciclos):\n"
+            for h in self.historico[-3:]:
+                historico_txt += f"- [{h['timestamp']}] Status: {h['status_geral']}\n"
+
+        # 5. Montar prompt completo
+        prompt = f"""
+{telemetria_txt}
+
+{alertas_txt}
+{historico_txt}
+
+Pergunta do operador: {pergunta_usuario}
+""".strip()
+
+        # 6. Chamar IA
+        resposta = llm(prompt, system=self.system_prompt)
+
+        # 7. Salvar no histórico
+        self.historico.append({
+            "timestamp": dados["timestamp"],
+            "status_geral": resultado["status_geral"],
+            "pergunta": pergunta_usuario,
+        })
+
+        return resposta
