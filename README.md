@@ -140,7 +140,7 @@ O system prompt completo está disponível em [`prompts/system_prompt.md`](promp
 - Sem persistência de dados entre sessões — histórico reinicia a cada execução
 
 ## 🎬 Vídeo de demonstração
-🔗 [Assistir demonstração no YouTube](https://www.youtube.com/watch?v=SEU_ID_AQUI)
+🔗 [Assistir demonstração no YouTube](https://youtu.be/EaKbNZCx0d8)
 
 > Configurado como "Não listado" no YouTube.
 
